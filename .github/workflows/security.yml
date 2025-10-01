@@ -1,0 +1,53 @@
+name: Build and Security Scan
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - security
+
+jobs:
+  Build-TrivyScan:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      IaC_DIRECTORY: "."
+      TRIVY_VERSION: "v0.63.0"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          # Usamos 'apt-get' pois os runners do GitHub são baseados em Ubuntu/Debian
+          sudo apt-get update
+          sudo apt-get install -y jq curl python3 docker-compose-plugin tar
+          
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION#v }}_Linux-64bit.tar.gz
+          tar zxvf trivy_${{ env.TRIVY_VERSION#v }}_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/trivy
+          trivy --version
+
+      - name: Build Docker Images
+        run: docker compose build
+
+      - name: Generate Trivy Reports
+        run: |
+          mkdir -p artifacts
+          
+          echo "Gerando relatórios de imagem, config e fs..."
+          trivy image --format json "meu-app-backend:latest" > artifacts/trivy_results_backend.json
+          trivy image --format json "meu-app-frontend:latest" > artifacts/trivy_results_frontend.json
+          trivy image --format json "mariadb:10.6.4-focal" > artifacts/trivy_results_db.json
+          trivy config --format json "${{ env.IaC_DIRECTORY }}" > artifacts/trivy_results_config.json
+          trivy fs --format json . > artifacts/trivy_results_fs.json
+          
+      - name: Upload Scan Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: artifacts/
+          retention-days: 7
