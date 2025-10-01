@@ -26,11 +26,11 @@ jobs:
           
       - name: Install Trivy
         run: |
-          wget https://github.com/aquasecurity/trivy/releases/download/${{ env.TRIVY_VERSION }}/trivy_${{ replace(env.TRIVY_VERSION, 'v', '') }}_Linux-64bit.tar.gz
-          tar zxvf trivy_${{ replace(env.TRIVY_VERSION, 'v', '') }}_Linux-64bit.tar.gz
+          TRIVY_VERSION_NUM=${TRIVY_VERSION#v}
+          wget https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}/trivy_${TRIVY_VERSION_NUM}_Linux-64bit.tar.gz
+          tar zxvf trivy_${TRIVY_VERSION_NUM}_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/trivy
           trivy --version
-
       - name: Build Docker Images
         run: docker compose build
 
