@@ -30,7 +30,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq curl python3 docker-compose-plugin tar
+          sudo apt-get install -y jq curl tar docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
       - name: Install Trivy
         run: |
