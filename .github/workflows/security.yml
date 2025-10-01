@@ -11,26 +11,36 @@ jobs:
   Build-TrivyScan:
     runs-on: ubuntu-latest
     continue-on-error: true
+
+    services:
+      dind:
+        image: docker:dind
+        options: --privileged
+
     env:
       IaC_DIRECTORY: "."
       TRIVY_VERSION: "v0.63.0"
+      DOCKER_HOST: tcp://dind:2375
+      DOCKER_TLS_CERTDIR: ""
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Dependencies
         run: |
-          # Usamos 'apt-get' pois os runners do GitHub são baseados em Ubuntu/Debian
           sudo apt-get update
           sudo apt-get install -y jq curl python3 docker-compose-plugin tar
-          
+
       - name: Install Trivy
         run: |
+          # Usamos a variável de shell para remover o 'v', que é mais simples e robusto
           TRIVY_VERSION_NUM=${TRIVY_VERSION#v}
           wget https://github.com/aquasecurity/trivy/releases/download/${TRIVY_VERSION}/trivy_${TRIVY_VERSION_NUM}_Linux-64bit.tar.gz
           tar zxvf trivy_${TRIVY_VERSION_NUM}_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/trivy
           trivy --version
+
       - name: Build Docker Images
         run: docker compose build
 
